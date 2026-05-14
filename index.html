@@ -1451,7 +1451,7 @@
             <span>תוספות והפחתות:</span>
             <strong id="payGlobalAdjsAmount" dir="ltr">₪0.00</strong>
           </div>
-          <div
+<div
             style="
               display: flex;
               justify-content: space-between;
@@ -1462,6 +1462,18 @@
           >
             <span>יתרת עבר:</span>
             <strong id="payGlobalDebtAmount" dir="ltr">₪0.00</strong>
+          </div>
+          <div
+            id="payGlobalVatContainer"
+            style="
+              display: none;
+              justify-content: space-between;
+              margin-bottom: 12px;
+              font-size: 0.95rem;
+            "
+          >
+            <span>מע"מ (17%):</span>
+            <strong id="payGlobalVatAmount" dir="ltr">₪0.00</strong>
           </div>
           <div
             style="
@@ -1680,9 +1692,15 @@
           <label>שם הפרויקט</label>
           <input type="text" id="editProjNameInput" autocomplete="off" />
         </div>
-        <div style="margin-bottom: 25px">
+        <div style="margin-bottom: 20px">
           <label>תעריף שעתי (₪)</label>
           <input type="number" id="editProjRateInput" />
+        </div>
+        <div style="margin-bottom: 25px">
+          <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: var(--text-main);">
+            <input type="checkbox" id="editProjVatInput" style="width: 18px; height: 18px; cursor: pointer;" />
+            הוסף מע"מ (17%) בסגירת חשבון
+          </label>
         </div>
 
         <div
@@ -2642,11 +2660,12 @@ function init() {
       }
 
       // --- Project Settings & Archive ---
-      function openProjectSettingsModal() {
+      function function openProjectSettingsModal() {
         const p = getActiveProject();
         if (!p) return;
         document.getElementById("editProjNameInput").value = p.name;
         document.getElementById("editProjRateInput").value = p.rate || 0;
+        document.getElementById("editProjVatInput").checked = !!p.vatEnabled;
 
         const arcBtn = document.getElementById("toggleArchiveBtn");
         if (p.archived) {
@@ -2688,6 +2707,7 @@ function init() {
 
         if (!isNaN(newRate)) p.rate = newRate;
         if (newName) p.name = newName;
+        p.vatEnabled = document.getElementById("editProjVatInput").checked;
 
         saveData();
         renderMainContent();
@@ -2933,7 +2953,9 @@ function init() {
         const hoursAmount = (totalSec / 3600) * p.rate;
         const currentDebt = p.debt || 0;
 
-        const grandTotal = hoursAmount + adjsAmount + currentDebt;
+        const subTotal = hoursAmount + adjsAmount;
+        const vatAmount = p.vatEnabled ? subTotal * 0.17 : 0;
+        const grandTotal = subTotal + vatAmount + currentDebt;
 
         if (
           allOpenSessions.length === 0 &&
@@ -2947,6 +2969,7 @@ function init() {
           totalSec: totalSec,
           hoursAmount: hoursAmount,
           adjsAmount: adjsAmount,
+          vatAmount: vatAmount,
           currentDebt: currentDebt,
           grandTotal: grandTotal,
           openSessions: allOpenSessions,
@@ -2959,6 +2982,15 @@ function init() {
           formatMoney(adjsAmount);
         document.getElementById("payGlobalDebtAmount").innerText =
           formatMoney(currentDebt);
+          
+        const vatContainer = document.getElementById("payGlobalVatContainer");
+        if (p.vatEnabled) {
+          vatContainer.style.display = "flex";
+          document.getElementById("payGlobalVatAmount").innerText = formatMoney(vatAmount);
+        } else {
+          vatContainer.style.display = "none";
+        }
+
         document.getElementById("payGlobalGrandTotal").innerText =
           formatMoney(grandTotal);
 
@@ -2985,6 +3017,8 @@ function init() {
           name: `סגירת תקופה (${new Date().toLocaleDateString("he-IL")})`,
           date: Date.now(),
           amount: globalPaymentData.hoursAmount + globalPaymentData.adjsAmount, // שווי העבודה הנוכחית ללא יתרות קודמות
+          vatEnabled: !!p.vatEnabled,
+          vatAmount: globalPaymentData.vatAmount,
           actualPaid: actualReceived,
           debtAfter: newDebt,
           seconds: globalPaymentData.totalSec,
@@ -3131,6 +3165,8 @@ function init() {
         archiveModalState.projectName = p.name;
         archiveModalState.date = batch.date;
         archiveModalState.totalAmount = batch.amount || 0;
+        archiveModalState.vatEnabled = batch.vatEnabled || false;
+        archiveModalState.vatAmount = batch.vatAmount || 0;
         archiveModalState.actualPaid = batch.actualPaid || 0;
 
         let chaptersStats = {};
@@ -3897,7 +3933,7 @@ function init() {
 
       // --- קיצורי מקלדת (רווח ו-Insert) וחיווי כרטיסייה ---
 
-      // פונקציה לעדכון כותרת הכרטיסייה למעלה
+// פונקציה לעדכון כותרת הכרטיסייה למעלה
       function updateTabTitle() {
         const p = getActiveProject();
         const isRunning = appData.activeTimer.chapterId !== null;
@@ -3913,10 +3949,8 @@ function init() {
 
           document.title = `${RTL}🔴 ${formatDuration(sessionDiff)}`;
         } else {
-          // מציג נקודה אפורה ואת שם הפרויקט כשהטיימר כבוי
-          let title = "שעות זמניות";
-          if (p) title += ` - ${p.name}`;
-
+          // הצגת שם הפרויקט בלבד למניעת כפילות מול שם האפליקציה ב-PWA
+          let title = p ? p.name : "שעות זמניות";
           document.title = `${RTL}${title}`;
         }
       }
@@ -3975,7 +4009,9 @@ function init() {
           projectName: archiveModalState.projectName,
           rate: archiveModalState.rate,
           items: archiveModalState.items,
-          totalAmount: archiveModalState.totalAmount,
+          vatEnabled: archiveModalState.vatEnabled,
+          vatAmount: archiveModalState.vatAmount,
+          totalAmount: archiveModalState.totalAmount + (archiveModalState.vatAmount || 0),
           actualPaid: archiveModalState.actualPaid,
         };
         openPrintSettings();
@@ -4023,6 +4059,8 @@ function init() {
           projectName: p.name,
           rate: p.rate,
           items: items,
+          vatEnabled: !!p.vatEnabled,
+          vatAmount: globalPaymentData.vatAmount || 0,
           totalAmount: globalPaymentData.grandTotal,
           actualPaid: 0, // אין עדיין תשלום בפועל לדרישה פתוחה
         };
@@ -4128,6 +4166,21 @@ function init() {
               `;
         }
 
+        let subTotalHtml = "";
+        if (state.vatEnabled) {
+          const subTotal = state.totalAmount - state.vatAmount;
+          subTotalHtml = `
+              <div style="display: flex; justify-content: space-between; font-size: 1.1rem; color: #555; margin-bottom: 8px;">
+                  <span>סכום ביניים:</span>
+                  <span dir="ltr">₪${subTotal.toFixed(2)}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 1.1rem; color: #555; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 15px;">
+                  <span>מע"מ (17%):</span>
+                  <span dir="ltr">₪${state.vatAmount.toFixed(2)}</span>
+              </div>
+          `;
+        }
+
         const debtRowHtml =
           state.actualPaid > 0
             ? `
@@ -4152,12 +4205,15 @@ function init() {
 
               ${detailsHtml}
 
-              <div class="print-total-box">
-                  <div class="print-total-label">סה"כ לתשלום</div>
-                  <div>
-                      <div class="print-total-val" dir="ltr">₪${state.totalAmount.toFixed(2)}</div>
-                      ${debtRowHtml}
+              <div class="print-total-box" style="display: block;">
+                  ${subTotalHtml}
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <div class="print-total-label">סה"כ לתשלום</div>
+                      <div>
+                          <div class="print-total-val" dir="ltr">₪${state.totalAmount.toFixed(2)}</div>
+                      </div>
                   </div>
+                  ${debtRowHtml}
               </div>
           `;
 
