@@ -1,15 +1,26 @@
 <!doctype html>
 <html lang="he" dir="rtl">
-<head>
+  <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#18181b" media="(prefers-color-scheme: dark)" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <meta
+      name="theme-color"
+      content="#fafafa"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="#18181b"
+      media="(prefers-color-scheme: dark)"
+    />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link rel="manifest" href="manifest.json" />
-    
+
     <title>שעות זמניות</title>
     <link id="dynamicFavicon" rel="icon" href="data:," />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -1451,7 +1462,7 @@
             <span>תוספות והפחתות:</span>
             <strong id="payGlobalAdjsAmount" dir="ltr">₪0.00</strong>
           </div>
-<div
+          <div
             style="
               display: flex;
               justify-content: space-between;
@@ -1697,8 +1708,20 @@
           <input type="number" id="editProjRateInput" />
         </div>
         <div style="margin-bottom: 25px">
-          <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: var(--text-main);">
-            <input type="checkbox" id="editProjVatInput" style="width: 18px; height: 18px; cursor: pointer;" />
+          <label
+            style="
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              cursor: pointer;
+              color: var(--text-main);
+            "
+          >
+            <input
+              type="checkbox"
+              id="editProjVatInput"
+              style="width: 18px; height: 18px; cursor: pointer"
+            />
             הוסף מע"מ (17%) בסגירת חשבון
           </label>
         </div>
@@ -2344,11 +2367,13 @@
       }
 
       // --- Init & Storage ---
-function init() {
+      function init() {
         // רישום מנוע ה-PWA לעבודה באופליין
-        if ('serviceWorker' in navigator) {
-          window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js').catch(err => console.log('PWA SW error:', err));
+        if ("serviceWorker" in navigator) {
+          window.addEventListener("load", () => {
+            navigator.serviceWorker
+              .register("./sw.js")
+              .catch((err) => console.log("PWA SW error:", err));
           });
         }
 
@@ -2810,14 +2835,15 @@ function init() {
           if (el) {
             el.innerText = formatDuration(sessionDiff); // מונה נוכחי בלבד כשהטיימר עובד
           }
-if (elTotal) {
+          if (elTotal) {
             elTotal.innerText = formatDuration(totalDur);
             elTotal.style.display = "block";
           }
 
           updateTabTitle();
 
-          // עדכון מסך המיקוד במידה והוא פתוח          if (!focusOverlayMinimized) {
+          // עדכון מסך המיקוד במידה והוא פתוח  \
+          if (!focusOverlayMinimized) {
             const focusTimeEl = document.getElementById("focusTimeDisplay");
             const focusTotalTimeEl = document.getElementById(
               "focusTotalTimeDisplay",
@@ -2981,11 +3007,12 @@ if (elTotal) {
           formatMoney(adjsAmount);
         document.getElementById("payGlobalDebtAmount").innerText =
           formatMoney(currentDebt);
-          
+
         const vatContainer = document.getElementById("payGlobalVatContainer");
         if (p.vatEnabled) {
           vatContainer.style.display = "flex";
-          document.getElementById("payGlobalVatAmount").innerText = formatMoney(vatAmount);
+          document.getElementById("payGlobalVatAmount").innerText =
+            formatMoney(vatAmount);
         } else {
           vatContainer.style.display = "none";
         }
@@ -3932,7 +3959,7 @@ if (elTotal) {
 
       // --- קיצורי מקלדת (רווח ו-Insert) וחיווי כרטיסייה ---
 
-// פונקציה לעדכון כותרת הכרטיסייה למעלה
+      // פונקציה לעדכון כותרת הכרטיסייה למעלה
       function updateTabTitle() {
         const p = getActiveProject();
         const isRunning = appData.activeTimer.chapterId !== null;
@@ -4011,7 +4038,8 @@ if (elTotal) {
           items: archiveModalState.items,
           vatEnabled: archiveModalState.vatEnabled,
           vatAmount: archiveModalState.vatAmount,
-          totalAmount: archiveModalState.totalAmount + (archiveModalState.vatAmount || 0),
+          totalAmount:
+            archiveModalState.totalAmount + (archiveModalState.vatAmount || 0),
           actualPaid: archiveModalState.actualPaid,
         };
         openPrintSettings();
