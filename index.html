@@ -1,11 +1,17 @@
 <!doctype html>
 <html lang="he" dir="rtl">
-  <head>
+<head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#18181b" media="(prefers-color-scheme: dark)" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <link rel="manifest" href="manifest.json" />
+    
     <title>שעות זמניות - ניהול עריכה תורנית</title>
     <link id="dynamicFavicon" rel="icon" href="data:," />
-
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -2320,7 +2326,14 @@
       }
 
       // --- Init & Storage ---
-      function init() {
+function init() {
+        // רישום מנוע ה-PWA לעבודה באופליין
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js').catch(err => console.log('PWA SW error:', err));
+          });
+        }
+
         // טעינת מצב לילה
         const savedTheme = localStorage.getItem("torahTimeTheme");
         if (savedTheme === "dark") {
