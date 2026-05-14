@@ -2810,15 +2810,14 @@ function init() {
           if (el) {
             el.innerText = formatDuration(sessionDiff); // מונה נוכחי בלבד כשהטיימר עובד
           }
-          if (elTotal) {
+if (elTotal) {
             elTotal.innerText = formatDuration(totalDur);
             elTotal.style.display = "block";
           }
 
-          document.title = `🔴 ${formatDuration(sessionDiff)}`;
+          updateTabTitle();
 
-          // עדכון מסך המיקוד במידה והוא פתוח
-          if (!focusOverlayMinimized) {
+          // עדכון מסך המיקוד במידה והוא פתוח          if (!focusOverlayMinimized) {
             const focusTimeEl = document.getElementById("focusTimeDisplay");
             const focusTotalTimeEl = document.getElementById(
               "focusTotalTimeDisplay",
@@ -3938,17 +3937,18 @@ function init() {
         const p = getActiveProject();
         const isRunning = appData.activeTimer.chapterId !== null;
 
-        // תו RTL
-        const RTL = "\u202B";
-
         if (isRunning) {
-          // מציג רק נקודה אדומה ואת זמן ההפעלה הנוכחית
+          // זמן ההפעלה הנוכחית
           const sessionDiff = Math.floor(
             (Date.now() - appData.activeTimer.startTime) / 1000,
           );
 
-          document.title = `${RTL}🔴 ${formatDuration(sessionDiff)}`;
+          // שימוש בתו LTR (Left-To-Right) לטיימר כדי שהספרות לא יקפצו
+          const LTR = "\u202A";
+          document.title = `${LTR}${formatDuration(sessionDiff)}`;
         } else {
+          // תו RTL לשם הפרויקט בעברית
+          const RTL = "\u202B";
           // הצגת שם הפרויקט בלבד למניעת כפילות מול שם האפליקציה ב-PWA
           let title = p ? p.name : "שעות זמניות";
           document.title = `${RTL}${title}`;
