@@ -970,6 +970,11 @@
         display: none;
       }
 
+      /* הסתרת הפאנל של נטפרי (NetFree) לשמירה על מינימליזם מושלם */
+      #netfree-popup-window-main {
+        display: none !important;
+      }
+      
       /* === עיצוב להדפסה יוקרתית === */
       @media print {
         /* הסתרת כל התוכנה לחלוטין - לא רק ויזואלית אלא פיזית */
@@ -2202,6 +2207,15 @@
         const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23${color}"><path d="${svgPath}"/></svg>`;
         document.getElementById("dynamicFavicon").href =
           "data:image/svg+xml," + svg;
+                // הוספת חיווי (Badge) לאייקון בשורת המשימות של מערכת ההפעלה כשהאפליקציה מותקנת
+        if ('setAppBadge' in navigator && 'clearAppBadge' in navigator) {
+          if (isRunning) {
+            navigator.setAppBadge().catch(console.error);
+          } else {
+            navigator.clearAppBadge().catch(console.error);
+          }
+        }
+
       }
 
       function minimizeFocusOverlay() {
