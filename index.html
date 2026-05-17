@@ -2091,6 +2091,34 @@
       </div>
     </div>
 
+    <!-- כותרת תחתונה - תנאי שימוש וזכויות יוצרים -->
+    <div
+      style="
+        position: fixed;
+        bottom: 12px;
+        left: 15px;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        z-index: 40;
+        display: flex;
+        gap: 15px;
+        background: var(--bg-body);
+        padding: 4px 8px;
+        border-radius: var(--radius);
+        opacity: 0.8;
+        transition: opacity 0.2s;
+      "
+      onmouseover="this.style.opacity = '1'"
+      onmouseout="this.style.opacity = '0.8'"
+    >
+      <span
+        style="cursor: pointer; text-decoration: underline"
+        onclick="openModal('tosModal')"
+        >תנאי שימוש</span
+      >
+      <span>&copy; 2026 שעות זמניות. כל הזכויות שמורות.</span>
+    </div>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
