@@ -1,4 +1,4 @@
-const CACHE_NAME = "torah-time-cache-v3.1";
+const CACHE_NAME = "torah-time-cache-v4";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
