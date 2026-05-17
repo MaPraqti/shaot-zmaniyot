@@ -432,6 +432,25 @@ async function attemptAutoSync() {
   }
 }
 
+// --- Terms of Service ---
+const CURRENT_TOS_VERSION = "v1";
+
+function checkTos() {
+  const agreedVersion = localStorage.getItem("torahTimeTosAgreed");
+  // אם אין אישור בכלל, או שהאישור הוא מגרסה ישנה, נציג את המודאל
+  if (agreedVersion !== CURRENT_TOS_VERSION) {
+    const tosModal = document.getElementById("tosModal");
+    if (tosModal) tosModal.classList.add("open");
+  }
+}
+
+function acceptTos() {
+  // שומרים את הגרסה הספציפית שהמשתמש אישר
+  localStorage.setItem("torahTimeTosAgreed", CURRENT_TOS_VERSION);
+  const tosModal = document.getElementById("tosModal");
+  if (tosModal) tosModal.classList.remove("open");
+}
+
 // --- Init & Storage ---
 function init() {
   // רישום מנוע ה-PWA לעבודה באופליין
@@ -460,6 +479,7 @@ function init() {
   renderApp();
   updateTabTitle();
   updateFavicon();
+  checkTos();
 
   // ננסה להפעיל סנכרון אוטומטי כמה שניות לאחר עליית האפליקציה
   setTimeout(attemptAutoSync, 3000);
@@ -1077,7 +1097,7 @@ function openGlobalPaymentModal() {
   const currentDebt = p.debt || 0;
 
   const subTotal = hoursAmount + adjsAmount;
-  const vatAmount = p.vatEnabled ? subTotal * 0.17 : 0;
+  const vatAmount = p.vatEnabled ? subTotal * 0.18 : 0;
   const grandTotal = subTotal + vatAmount + currentDebt;
 
   if (
@@ -2075,8 +2095,16 @@ function closeModal(id) {
 }
 window.onclick = (e: MouseEvent) => {
   const target = e.target as HTMLElement;
-  if (target && target.classList && target.classList.contains("modal-overlay"))
-    target.classList.remove("open");
+  if (
+    target &&
+    target.classList &&
+    target.classList.contains("modal-overlay")
+  ) {
+    // אל תסגור את חלון תנאי השימוש בלחיצה בחוץ, חובה ללחוץ על "אני מאשר"
+    if (target.id !== "tosModal") {
+      target.classList.remove("open");
+    }
+  }
 };
 
 // --- קיצורי מקלדת (רווח ו-Insert) וחיווי כרטיסייה ---
@@ -2306,7 +2334,7 @@ function executePrint() {
                   <span dir="ltr">₪${subTotal.toFixed(2)}</span>
               </div>
               <div style="display: flex; justify-content: space-between; font-size: 1.1rem; color: #555; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 15px;">
-                  <span>מע"מ (17%):</span>
+                  <span>מע"מ (18%):</span>
                   <span dir="ltr">₪${state.vatAmount.toFixed(2)}</span>
               </div>
           `;
@@ -2359,6 +2387,7 @@ init();
 
 // --- קישור הפונקציות לממשק המשתמש (HTML) ---
 Object.assign(window, {
+  acceptTos, // <--- הוסף את השורה הזו
   handleFileImport,
   minimizeFocusOverlay,
   removePrintLogo,
