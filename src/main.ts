@@ -238,8 +238,10 @@ function openDriveSyncModal() {
   statusDiv.innerHTML = `
             <span class="material-symbols-rounded" style="font-size: 45px; color: var(--accent-blue); margin-bottom: 10px;">cloud_sync</span>
             <div style="color: var(--text-main); font-weight: 500; font-size: 1.2rem;">גיבוי מאובטח ל-Google Drive</div>
-            <p style="font-size: 0.95rem; color: var(--text-muted); margin-top: 10px; line-height: 1.5;">
-              בלחיצה על הכפתור למטה, תתבקש להתחבר לחשבון הגוגל שלך. המערכת תיצור קובץ גיבוי מעודכן ישירות בדרייב הפרטי שלך.
+            <p style="font-size: 0.95rem; color: var(--text-muted); margin-top: 10px; line-height: 1.6;">
+              בלחיצה על הכפתור מטה, תתבקש לאשר חיבור לחשבון הגוגל שלך. המערכת תייצר קובץ גיבוי מעודכן בדרייב הפרטי שלך.
+              <br><br>
+              לאחר הגיבוי הראשוני, המערכת תבצע סנכרון שקט אחת ל-24 שעות. במידה והסנכרון האוטומטי ייכשל (לדוגמה עקב ניתוק מגוגל), יופיע חיווי אדום על סמל הענן בסרגל העליון ותידרש פעולת גיבוי ידנית.
             </p>
         `;
 
@@ -340,21 +342,50 @@ async function performRealDriveSync() {
 
 async function uploadDataToDrive() {
   try {
+    const FOLDER_NAME = "קבצי גיבוי נתונים של תוכנת שעות זמניות";
+
+    // 1. בדיקה האם קיימת תיקיית הגיבוי, ואם לא - יצירתה
+    let folderId = null;
+    const folderResponse = await gapi.client.drive.files.list({
+      q: `mimeType='application/vnd.google-apps.folder' and name='${FOLDER_NAME}' and trashed=false`,
+      spaces: "drive",
+      fields: "files(id)",
+    });
+
+    if (folderResponse.result.files && folderResponse.result.files.length > 0) {
+      folderId = folderResponse.result.files[0].id;
+    } else {
+      const createdFolder = await gapi.client.drive.files.create({
+        resource: {
+          name: FOLDER_NAME,
+          mimeType: "application/vnd.google-apps.folder",
+        },
+        fields: "id",
+      });
+      folderId = createdFolder.result.id;
+    }
+
     const fileContent = JSON.stringify(appData);
-    const fileMetadata = {
+    const fileMetadata: any = {
       name: BACKUP_FILE_NAME,
       mimeType: "application/json",
     };
 
-    // 1. בדיקה האם כבר קיים קובץ גיבוי בדרייב
+    // 2. בדיקה האם כבר קיים קובץ גיבוי בדרייב (ונשלוף גם את ההורים שלו)
     const response = await gapi.client.drive.files.list({
       q: `name='${BACKUP_FILE_NAME}' and trashed=false`,
       spaces: "drive",
-      fields: "files(id, name)",
+      fields: "files(id, name, parents)",
     });
 
     const files = response.result.files;
     let fileId = files && files.length > 0 ? files[0].id : null;
+    let currentParents = files && files.length > 0 ? files[0].parents : [];
+
+    // אם זה קובץ חדש, נכניס אותו ישירות לתוך התיקייה
+    if (!fileId) {
+      fileMetadata.parents = [folderId];
+    }
 
     // 2. בניית הבקשה להעלאה (Multipart Request)
     const boundary = "-------314159265358979323846";
@@ -371,7 +402,7 @@ async function uploadDataToDrive() {
       close_delim;
 
     // אם הקובץ קיים נעשה PATCH (עדכון), אם לא נעשה POST (יצירה)
-    let requestParams = {
+    let requestParams: any = {
       path: fileId
         ? `/upload/drive/v3/files/${fileId}`
         : "/upload/drive/v3/files",
@@ -384,6 +415,20 @@ async function uploadDataToDrive() {
     };
 
     await gapi.client.request(requestParams);
+
+    // במידה והקובץ הישן היה קיים אבל מחוץ לתיקייה, נעביר אותו לתוכה עכשיו
+    if (
+      fileId &&
+      folderId &&
+      (!currentParents || !currentParents.includes(folderId))
+    ) {
+      await gapi.client.drive.files.update({
+        fileId: fileId,
+        addParents: folderId,
+        removeParents: currentParents.join(","),
+        fields: "id, parents",
+      });
+    }
 
     // 3. עדכון ממשק המשתמש
     appData.lastSyncDate = Date.now();
