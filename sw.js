@@ -1,30 +1,46 @@
-const CACHE_NAME = 'torah-time-cache-v1';
+const CACHE_NAME = "torah-time-cache-v2";
 
-self.addEventListener('install', event => {
-  self.skipWaiting(); // כופה על המערכת לפעול מיד
+self.addEventListener("install", (event) => {
+  self.skipWaiting();
 });
 
-self.addEventListener('activate', event => {
-  event.waitUntil(clients.claim()); // משתלט על הדפדפן מיד
+self.addEventListener("activate", (event) => {
+  event.waitUntil(clients.claim());
 });
 
-// אסטרטגיית Stale-While-Revalidate: מגיש תמיד מהקאש למהירות ולאופליין, אבל בודק עדכונים מהרשת במקביל.
-self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET') return;
+self.addEventListener("fetch", (event) => {
+  // התעלם מבקשות שאינן GET, והתעלם לחלוטין מבקשות לשרתים של גוגל ואנליטיקס
+  if (
+    event.request.method !== "GET" ||
+    event.request.url.includes("googleapis.com") ||
+    event.request.url.includes("accounts.google.com") ||
+    event.request.url.includes("zgo.at")
+  ) {
+    return;
+  }
 
   event.respondWith(
-    caches.match(event.request).then(cachedResponse => {
-      const fetchPromise = fetch(event.request).then(networkResponse => {
-        caches.open(CACHE_NAME).then(cache => {
-          cache.put(event.request, networkResponse.clone());
+    caches.match(event.request).then((cachedResponse) => {
+      const fetchPromise = fetch(event.request)
+        .then((networkResponse) => {
+          // בודק שהתשובה תקינה לפני שמשכפל ושומר למטמון
+          if (
+            networkResponse &&
+            networkResponse.status === 200 &&
+            networkResponse.type === "basic"
+          ) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return networkResponse;
+        })
+        .catch((error) => {
+          console.log("מצב אופליין פעיל.");
         });
-        return networkResponse;
-      }).catch(error => {
-        console.log('מצב אופליין פעיל. האפליקציה ממשיכה לעבוד ללא רשת.');
-      });
-      
-      // מגיש קודם כל את המטמון. אם האתר לא בקאש עדיין - ממתין לרשת.
+
       return cachedResponse || fetchPromise;
-    })
+    }),
   );
 });

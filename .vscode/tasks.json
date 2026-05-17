@@ -1,0 +1,25 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run: Combine Project",
+      "type": "shell",
+      "command": "node scripts/combine-project.mjs",
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Run: Type Check Log",
+      "type": "shell",
+      "command": "node scripts/typecheck-log.js",
+      "group": "none",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    }
+  ]
+}
